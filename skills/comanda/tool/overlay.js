@@ -511,7 +511,7 @@
   function describe(el) {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
-    const html = el.outerHTML;
+    const html = el.cloneNode(false).outerHTML;
     return {
       components: componentChain(el),
       html: html.slice(0, html.indexOf('>') + 1).slice(0, 400),
@@ -2180,28 +2180,29 @@
       },
     });
   });
-  async function sendEdit() {
+  async function sendEdit(noteArg, drawing) {
     const t = editT;
-    if (!t) return;
-    const note = $('enote').value.trim();
+    if (!t) return false;
+    const note = noteArg ?? $('enote').value.trim();
     const edits = Object.entries(t.changes).map(([prop, c]) => ({ prop, from: c.from, to: c.to }));
     // items that moved together (align/distribute) enter as extra targets, each with its own transform
     const extras = [...t.others.entries()].map(([el, m]) => {
       const i = targets.findIndex((x) => x.el === el);
       return { ...(i >= 0 ? { ref: `@${i + 1}` } : {}), ...describe(el), edits: [{ prop: 'transform', from: m.base, to: el.style.transform }] };
     });
-    if (!edits.length && !note && !extras.length) return;
+    if (!edits.length && !note && !extras.length) return false;
     const comment = note || 'Apply the properties changed in Edit (edits) to the code.';
     const r = await fetch('/__le/edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comment, route: location.pathname + location.search, targets: [{ ...t.info, edits, style: t.map }, ...extras] }),
+      body: JSON.stringify({ comment, route: location.pathname + location.search, targets: [{ ...t.info, edits, style: t.map }, ...extras], drawing }),
     }).catch(() => null);
-    if (!r || !r.ok) { $('eerr').textContent = `send failed${r ? ` (${r.status})` : ''}`; return; }
+    if (!r || !r.ok) { $('eerr').textContent = `send failed${r ? ` (${r.status})` : ''}`; return false; }
     $('eerr').textContent = '';
     $('enote').value = '';
     setEdit(null);
     setPop('queue');
+    return true;
   }
 
   // Send a request. Chat: the panel text with the selected items/areas. Inspector: the command bar line, about the
@@ -2215,7 +2216,12 @@
       const rect = inkRect();
       drawing = { png: ink.toDataURL('image/png'), viewport: { w: innerWidth, h: innerHeight }, rect, elements: elementsInRect(rect).map(describe) };
     }
-    const list = inspOpen && editT ? [{ ref: '@1', ...editT.info }] : targets.map((t, i) => ({ ref: `@${i + 1}`, ...t.info }));
+    // Inspector open on an item: the bar text goes with the pending edits; sendEdit is the only path that carries them.
+    if (inspOpen && editT) {
+      if (await sendEdit(comment, drawing)) { field.value = ''; clearInk(); }
+      return;
+    }
+    const list = targets.map((t, i) => ({ ref: `@${i + 1}`, ...t.info }));
     const r = await fetch('/__le/edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2293,7 +2299,7 @@
   scrub($('fldx').querySelector('span'), $('ex'));
   scrub($('fldy').querySelector('span'), $('ey'));
   scrub($('fldrot').querySelector('span'), $('erot'));
-  $('esend').onclick = sendEdit;
+  $('esend').onclick = () => sendEdit();
   $('enote').oninput = () => { updateSend(); };
   $('enote').onkeydown = (e) => { if (e.key === 'Enter') sendEdit(); };
   $('send').onclick = send;

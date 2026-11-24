@@ -1,0 +1,21 @@
+{
+  "name": "comanda",
+  "displayName": "Comanda",
+  "version": "1.0.0",
+  "description": "Point at your dev site and the coding agent edits the code: select, mark, draw or change a value in the overlay, and the change lands in the repository.",
+  "author": {
+    "name": "lucasdifranco",
+    "url": "https://github.com/lucasdifranco"
+  },
+  "homepage": "https://github.com/lucasdifranco/comanda",
+  "repository": "https://github.com/lucasdifranco/comanda",
+  "license": "MIT",
+  "keywords": [
+    "dev-tools",
+    "browser",
+    "overlay",
+    "css",
+    "dom",
+    "agent-skills"
+  ]
+}

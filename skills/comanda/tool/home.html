@@ -24,9 +24,8 @@
   <p>Enter the repository and the URL of the site running in dev. The site opens here with the "Edit" button.</p>
   <form id="f">
     <label>Repository folder <input id="repo" required placeholder="D:/code/my-site"></label><br>
-    <label>Site URL <input id="url" placeholder="http://localhost:8081  (empty with a command: port read from the app output)"></label><br>
-    <label>App command (optional, for sites without hot reload) <input id="cmd" placeholder="python app.py --no-browser"></label>
-    <p>With a command, Comanda starts the app in the repository folder, restarts it after each done or undone request and reloads the page.</p><br>
+    <label>Site URL <input id="url" placeholder="http://localhost:8081"></label><br>
+    <p>An app without hot reload (Python, Go, a binary) takes a command, and a command runs a shell: give it to the agent, which has the token. This page cannot set one.</p><br>
     <button>Open</button>
   </form>
   <div id="err"></div>
@@ -34,22 +33,23 @@
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
-  async function open(repo, url, cmd) {
-    const r = await fetch('/__le/target', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repo, url, cmd }) });
+  async function open(repo, url) {
+    const r = await fetch('/__le/target', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repo, url }) });
     if (r.ok) location.href = '/';
     else $('err').textContent = await r.text() || `error ${r.status}`;
   }
   $('f').onsubmit = (e) => {
     e.preventDefault();
-    if (!$('url').value.trim() && !$('cmd').value.trim()) { $('err').textContent = 'enter the site URL or the app command'; return; }
-    open($('repo').value.trim(), $('url').value.trim(), $('cmd').value.trim());
+    if (!$('url').value.trim()) { $('err').textContent = 'enter the site URL'; return; }
+    open($('repo').value.trim(), $('url').value.trim());
   };
   fetch('/__le/config').then((r) => r.json()).then((c) => {
-    if (c.current) { $('repo').value = c.current.repo; $('url').value = c.current.url || ''; $('cmd').value = c.current.cmd || ''; }
+    if (c.current) { $('repo').value = c.current.repo; $('url').value = c.current.url || ''; }
     for (const t of c.recent) {
+      if (t.cmd) continue; // supervised app: set by the agent, the command needs the token
       const b = document.createElement('button');
-      b.textContent = `${t.cmd ? `[${t.cmd}]` : ''}${t.url ? ` ${t.url}` : ''}  ->  ${t.repo}`;
-      b.onclick = (e) => { e.preventDefault(); open(t.repo, t.url || '', t.cmd || ''); };
+      b.textContent = `${t.url ? ` ${t.url}` : ''}  ->  ${t.repo}`;
+      b.onclick = (e) => { e.preventDefault(); open(t.repo, t.url || ''); };
       $('recent').appendChild(b);
     }
   });

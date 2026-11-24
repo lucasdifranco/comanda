@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readJsonFile } from './lib.mjs';
 
 const QUEUE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'queue');
 fs.mkdirSync(QUEUE, { recursive: true });
@@ -22,7 +23,7 @@ function check(file) {
   if (!file?.endsWith('.json')) return;
   const full = path.join(QUEUE, file);
   let r;
-  try { r = JSON.parse(fs.readFileSync(full, 'utf8')); } catch { return; } // file still being written: the next event picks it up
+  try { r = readJsonFile(full); } catch { return; } // file still being written: the next event picks it up
   if (repo && norm(r.repo) !== repo) return;
   if (!seen.has(file)) {
     seen.add(file);

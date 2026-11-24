@@ -4,3 +4,8 @@ Thumbs.db
 # local data, never published
 skills/comanda/tool/queue/
 skills/comanda/tool/config.json
+skills/comanda/tool/token
+studio/output/
+# /brag run output (brag-output/ or brag-output-<timestamp>/)
+brag-output*/
+studio/

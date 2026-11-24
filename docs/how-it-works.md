@@ -14,12 +14,12 @@ browser ──► proxy 127.0.0.1:7780 ──► your dev server (localhost:5173
 
 `server.mjs` serves the target site with one extra `<script src="/__le/overlay.js">` before `</body>`. That is the whole integration — the site itself is never modified. The proxy also carries the hot-reload WebSocket, so the page reloads as usual.
 
-Nothing listens outside `127.0.0.1`, and every write endpoint (`/__le/target`, `/__le/edit`, `/__le/answer`, `/__le/undo`, `/__le/restart`) requires the request to carry Comanda's own `Origin`.
+Nothing listens outside `127.0.0.1`, and every write endpoint (`/__le/target`, `/__le/edit`, `/__le/answer`, `/__le/undo`, `/__le/restart`) requires the request to carry Comanda's own `Origin`; a `cmd` in `/__le/target` also needs the token in `TOOL/token`, so a page of the site cannot run a shell. Every script of the served site shares this origin, so it can also change the target (an existing repo and an http/https URL) and restart the supervised app; it cannot run a new shell.
 
 | Endpoint | What it does |
 | --- | --- |
 | `GET /__le/config` | current target and app state — the "is it up?" check |
-| `POST /__le/target` | `{repo, url}` or `{repo, url, cmd}` — point the proxy at a site or an app command |
+| `POST /__le/target` | `{repo, url}` or `{repo, url, cmd}` — point the proxy at a site or an app command (`cmd` needs the `X-Comanda-Token` header with the contents of `TOOL/token`) |
 | `POST /__le/edit` | the overlay sends a ticket; returns `{id}` |
 | `POST /__le/answer` | the user's answer to a question |
 | `POST /__le/undo` | restore the files of the last request |
@@ -50,11 +50,12 @@ One JSON file per request in `queue/`, named `<id>.json`, where `id` is `<timest
       "edits": [{ "prop": "height", "from": "180px", "to": "240px" }]
     }
   ],
-  "markedArea": { "elements": [] },
-  "drawing": { "image": "queue/drawings/<id>.png", "viewport": { "w": 1440, "h": 900 }, "rect": {}, "elements": [] },
+  "drawing": { "image": "C:/Users/you/.comanda/tool/queue/drawings/<id>.png", "viewport": { "w": 1440, "h": 900 }, "rect": {}, "elements": [] },
   "replyTo": { "id": "1790000000000-zz99", "comment": "…", "reply": "…" }
 }
 ```
+
+A marked area is one more target: `{ "ref": "@2", "markedArea": { "x": 0, "y": 0, "w": 400, "h": 200 }, "elements": [ … ] }` — the box and the items under it, in the same format as the targets.
 
 Statuses, in the order they happen:
 

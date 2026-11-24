@@ -33,7 +33,7 @@ Two different jobs: **a place to host it** and **places to be seen**.
 | **anthropics/skills** and **openai/skills** | vendor-curated catalogs. Read the CONTRIBUTING of each before opening an issue/PR; they take few entries | only with a polished repo |
 | **Product Hunt** | good for the "AI dev tool" audience; needs a gallery image and a 30-second video | half a day, schedule it |
 | **Hacker News "Ask HN: what are you working on"** | the monthly thread, low effort, real traffic | 5 min |
-| **Claude Code plugin marketplace** | third-party marketplaces are a `.claude-plugin/marketplace.json` away; it lets people run `/plugin marketplace add lucasdifranco/comanda` | next step, after the repo is stable — schema at code.claude.com/docs/en/plugin-marketplaces |
+| **Claude Code plugin marketplace** | `.claude-plugin/marketplace.json` + `.claude-plugin/plugin.json` in the repo; it lets people run `/plugin install comanda --marketplace lucasdifranco/comanda` | done, in the repo root |
 
 Skip for now: MCP registries (Smithery and similar). Comanda is not an MCP server, and pretending otherwise burns the first impression.
 
@@ -80,6 +80,20 @@ Skip for now: MCP registries (Smithery and similar). Comanda is not an MCP serve
 ### Product Hunt
 
 **Tagline:** Point at the page. The agent edits the code.
+
+## Visuals
+
+Real captures of the overlay, shot on a demo site (the studio that shoots them is local, not part of the repo).
+
+| File | What it shows |
+| --- | --- |
+| `assets/comanda-demo.mp4` | 43 s: open the panel, select the headline, type the request, send, cooking, done, the page repaints; then **Edit**: move the button, change its radius, send the changes; a question at the end. The pointer travels, clicks ripple, and every state holds long enough to read |
+| `assets/hero.png` | README hero: the headline selected as `@1` with the request typed, three tickets in the panel |
+| `assets/mark-area.png` | **Mark area**: a box over the three cards, the items under it become one request |
+| `assets/draw.png` | **Draw**: a red circle around the button, sent as a scribble |
+| `assets/inspector.png` | **Edit**: the inspector open on the button, CSS and live values |
+| `assets/done.png` | A finished ticket: `DONE` stamp, the reply on the stub, the headline now in two lines |
+| `assets/question.png` | The agent asking on screen, with options and a free-text field |
 
 ## Day-0 checklist
 

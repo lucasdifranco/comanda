@@ -1,0 +1,15 @@
+{
+  "name": "comanda",
+  "description": "Point at the page. The agent edits the code.",
+  "owner": {
+    "name": "lucasdifranco",
+    "url": "https://github.com/lucasdifranco"
+  },
+  "plugins": [
+    {
+      "name": "comanda",
+      "source": "./",
+      "description": "Point at your dev site and the coding agent edits the code. A local proxy injects an edit overlay; nothing is installed in the site and there are no dependencies."
+    }
+  ]
+}

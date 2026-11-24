@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { injectOverlay, OVERLAY_TAG, parsePort, readManifest, restoreSnapshot, shouldRestart } from './lib.mjs';
+import { injectOverlay, OVERLAY_TAG, parsePort, readJsonFile, readManifest, restoreSnapshot, shouldRestart } from './lib.mjs';
 
 test('snap.mjs saves the original and undo restores it, deleting what the request created', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'le-'));
@@ -43,6 +43,18 @@ test('parsePort finds the port in the app output', () => {
   assert.equal(parsePort('Uvicorn running on http://0.0.0.0:8000'), 8000);
   assert.equal(parsePort('ZeraLVD - pasta: D:\\x'), 0);
   assert.equal(parsePort('https://example.com:443/'), 0);
+  // no scheme: the shape Go, Express and some Python servers print
+  assert.equal(parsePort('Listening on 0.0.0.0:8080'), 8080);
+  assert.equal(parsePort('Server started at 127.0.0.1:3000'), 3000);
+  assert.equal(parsePort('at 12:30 the job ran'), 0);
+});
+
+test('readJsonFile ignores a UTF-8 BOM', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'le-bom-'));
+  const file = path.join(tmp, 'r.json');
+  fs.writeFileSync(file, '\uFEFF{"status":"done"}');
+  assert.deepEqual(readJsonFile(file), { status: 'done' });
+  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 test('shouldRestart only on the transition to done/undone', () => {

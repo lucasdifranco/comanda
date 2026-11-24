@@ -11,6 +11,25 @@ npx skills add lucasdifranco/comanda -g     # every project
 
 The CLI asks which agents you have and copies the skill into the right folder. It supports 80 agents, including all the ones below. Node.js 22.20+ for the CLI itself.
 
+## Claude Code plugin
+
+Inside a Claude Code session, from any folder, one step:
+
+```
+/plugin install comanda --marketplace lucasdifranco/comanda
+```
+
+From the shell, in two steps:
+
+```bash
+claude plugin marketplace add lucasdifranco/comanda
+claude plugin install comanda@comanda
+```
+
+Claude Code namespaces plugin components under the plugin name, so the command is `/comanda:comanda` and not `/comanda`. The plugin ships the same `skills/comanda/` folder as the CLI install, so everything after the install is identical: the first run copies the tool to `~/.comanda/tool`, and plugin updates replace the plugin folder without touching the queue or the undo snapshots.
+
+Both manifests live in the repository root: `.claude-plugin/marketplace.json` lists the plugin, `.claude-plugin/plugin.json` describes it. The plugin source is `./`, so the folder you clone is also the plugin.
+
 ## Path of each agent
 
 Copy `skills/comanda/` into the folder on the right. `.` is the root of the project where you run the agent; `~` is your home.

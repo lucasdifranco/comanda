@@ -1,6 +1,7 @@
 // Local proxy: serves the target site with the "Edit" overlay injected and writes requests to a queue (queue/).
 // The code is edited by a normal Claude Code session that follows the queue (see README).
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
@@ -8,14 +9,20 @@ import path from 'node:path';
 import tls from 'node:tls';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { injectOverlay, parsePort, readManifest, restoreSnapshot, shouldRestart } from './lib.mjs';
+import { injectOverlay, parsePort, readJsonFile, readManifest, restoreSnapshot, shouldRestart } from './lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.LIVE_EDIT_PORT || 7780);
 const SELF_ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`];
+const LOCAL_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`, `[::1]:${PORT}`]);
 const CONFIG = path.join(HERE, 'config.json');
+const TOKEN_FILE = path.join(HERE, 'token');
 const QUEUE = path.join(HERE, 'queue');
 fs.mkdirSync(QUEUE, { recursive: true });
+// Every page the proxy serves is same-origin with /__le, so the browser can call the write endpoints. A shell command
+// (target.cmd) is the one write a page must not make: it needs this token, which only a local process can read.
+const TOKEN = randomUUID();
+fs.writeFileSync(TOKEN_FILE, TOKEN, { mode: 0o600 });
 
 let config = { current: null, recent: [] };
 try { config = JSON.parse(fs.readFileSync(CONFIG, 'utf8')); } catch {}
@@ -33,7 +40,7 @@ const publicTarget = () => target && (target.cmd
   : { repo: target.repo, url: target.url, cmd: '' });
 
 // ------------------------------------------------------------------ supervised app (optional, target with cmd)
-const app = { child: null, gen: 0, status: 'stopped', log: [], timer: null };
+const app = { child: null, gen: 0, status: 'stopped', log: [], timer: null, portTimer: null };
 const appInfo = () => ({ status: app.status, log: app.log.slice(-15).join('\n') });
 
 function appLog(text) {
@@ -97,6 +104,9 @@ async function startApp() {
   });
   app.child = child;
   let waiting = false;
+  // no port in the output at all: say so, instead of showing "restarting" forever (waitReady only runs once a port exists)
+  clearTimeout(app.portTimer);
+  app.portTimer = setTimeout(() => { if (gen === app.gen && !waiting) { appLog('[live-edit] no port in the app output in 60 s'); setApp('error'); } }, 60000);
   const onOut = (buf) => {
     if (gen !== app.gen) return;
     const text = buf.toString('utf8');
@@ -126,6 +136,7 @@ function scheduleRestart() {
 async function stopApp() {
   app.gen++;
   clearTimeout(app.timer);
+  clearTimeout(app.portTimer);
   const old = app.child;
   app.child = null;
   await killTree(old);
@@ -136,12 +147,15 @@ for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => process
 process.on('exit', () => killTree(app.child, true));
 
 const VALID_ID = /^[\w-]+$/;
+// One ticket is read by every poll and sent to the panel, and any script of the served site can create one.
+const TICKET_MAX = 512e3, BODY_MAX = 1e6, COMMENT_MAX = 8000, DRAWING_MAX = 400e3;
 
 // Request + what comes from side files: "now" (<id>.now, the current step written by Claude) and "files"
 // (what snap.mjs saved for Undo)
 function readRequest(file) {
   let r;
-  try { r = JSON.parse(fs.readFileSync(path.join(QUEUE, file), 'utf8')); } catch { return null; }
+  try { r = readJsonFile(path.join(QUEUE, file)); } catch { return null; }
+  if (typeof r?.repo !== 'string' || !r.repo) return null;
   try { r.now = fs.readFileSync(path.join(QUEUE, `${r.id}.now`), 'utf8').trim().slice(0, 160); } catch {}
   const repo = path.resolve(r.repo);
   r.files = readManifest(QUEUE, r.id).map((m) => path.relative(repo, m.file));
@@ -153,11 +167,23 @@ function requestsForTarget() {
     .map(readRequest).filter((r) => r && target && r.repo === target.repo);
 }
 
+// Keeps the tool folder bounded: the newest 200 requests and nothing else (the UI shows 30, the agent needs the
+// recent ones). Runs after the response, so a failed delete never fails the request.
+function pruneQueue() {
+  for (const f of fs.readdirSync(QUEUE).filter((f) => f.endsWith('.json')).sort().slice(0, -200)) {
+    const id = f.slice(0, -5);
+    fs.rmSync(path.join(QUEUE, f), { force: true });
+    fs.rmSync(path.join(QUEUE, `${id}.now`), { force: true });
+    fs.rmSync(path.join(QUEUE, 'drawings', `${id}.png`), { force: true });
+    fs.rmSync(path.join(QUEUE, 'snap', id), { recursive: true, force: true });
+  }
+}
+
 // Claude updates status/reply directly in the file (and the current step in .now); the overlay gets it by SSE.
 // Last status seen for each request: a request that becomes done/undone restarts the supervised app.
 const lastStatus = new Map();
 for (const f of fs.readdirSync(QUEUE).filter((n) => n.endsWith('.json'))) {
-  try { const r = JSON.parse(fs.readFileSync(path.join(QUEUE, f), 'utf8')); lastStatus.set(r.id, r.status); } catch {}
+  try { const r = readJsonFile(path.join(QUEUE, f)); lastStatus.set(r.id, r.status); } catch {}
 }
 fs.watch(QUEUE, (_, file) => {
   if (!file?.endsWith('.json') && !file?.endsWith('.now')) return;
@@ -170,12 +196,22 @@ fs.watch(QUEUE, (_, file) => {
   if (target.cmd && shouldRestart(prev, r.status)) scheduleRestart();
 });
 
-function readJson(req) {
+function readJson(req, res) {
   return new Promise((resolve, reject) => {
     let data = '';
-    // up to 8 MB: the drawing comes as a PNG in a data URL
-    req.on('data', (c) => { data += c; if (data.length > 8e6) req.destroy(); });
-    req.on('end', () => { try { resolve(JSON.parse(data || '{}')); } catch (e) { reject(e); } });
+    let over = false;
+    // BODY_MAX: over that, answer 413 once and drop the rest (the client used to see ECONNRESET)
+    req.on('data', (c) => {
+      if (over) return;
+      data += c;
+      if (data.length > BODY_MAX) {
+        over = true;
+        data = '';
+        res.writeHead(413, { Connection: 'close' }).end('body too large');
+        reject(new Error('too large'));
+      }
+    });
+    req.on('end', () => { if (!over) try { resolve(JSON.parse(data || '{}')); } catch (e) { reject(e); } });
   });
 }
 
@@ -206,12 +242,16 @@ async function handleApi(req, res, route) {
     return;
   }
   let body;
-  try { body = await readJson(req); } catch { res.writeHead(400).end(); return; }
+  try { body = await readJson(req, res); } catch { if (!res.headersSent) res.writeHead(400).end(); return; }
 
   if (route === '/target') {
-    const repo = path.resolve(String(body.repo || ''));
+    const rawRepo = typeof body.repo === 'string' ? body.repo.trim() : '';
+    if (!rawRepo) { res.writeHead(400).end('repository folder is required'); return; }
+    const repo = path.resolve(rawRepo);
     // cmd (optional): command that starts the app, run in the repo folder; live-edit restarts it after each done request
     const cmd = typeof body.cmd === 'string' ? body.cmd.trim() : '';
+    // a command is a shell: the browser never has the token (any page served here shares this origin)
+    if (cmd && req.headers['x-comanda-token'] !== TOKEN) { res.writeHead(403).end('cmd needs the token in TOKEN_FILE'); return; }
     const rawUrl = typeof body.url === 'string' ? body.url.trim() : '';
     let url = null;
     if (rawUrl || !cmd) {
@@ -233,6 +273,7 @@ async function handleApi(req, res, route) {
   } else if (route === '/edit') {
     if (!target) { res.writeHead(400).end('no target'); return; }
     if (typeof body.comment !== 'string' || !body.comment.trim()) { res.writeHead(400).end(); return; }
+    if (body.comment.trim().length > COMMENT_MAX) { res.writeHead(413).end('comment too long'); return; }
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const request = {
       id, created: new Date().toISOString(), status: 'pending', reply: '',
@@ -242,17 +283,23 @@ async function handleApi(req, res, route) {
     // reply to a request already done ("Reply" in the panel): carries the id and comment of the original
     const orig = VALID_ID.test(String(body.replyTo || '')) ? readRequest(`${body.replyTo}.json`) : null;
     if (orig) request.replyTo = { id: orig.id, comment: orig.comment, reply: orig.reply };
-    // drawing: transparent PNG the size of the window, only the strokes; rect and elements say what is underneath
-    const png = typeof body.drawing?.png === 'string' && body.drawing.png.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+    // drawing: transparent PNG the size of the window, only the strokes; rect and elements say what is underneath.
+    // A real full-window scribble is tens of KB; the cap stops a page from making a ticket the panel cannot load.
+    const rawPng = body.drawing?.png;
+    if (typeof rawPng === 'string' && rawPng.length > DRAWING_MAX) { res.writeHead(413).end('drawing too large'); return; }
+    const png = typeof rawPng === 'string' && rawPng.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+    const dir = path.join(QUEUE, 'drawings');
+    const image = path.join(dir, `${id}.png`);
     if (png) {
-      const dir = path.join(QUEUE, 'drawings');
       fs.mkdirSync(dir, { recursive: true });
-      const image = path.join(dir, `${id}.png`);
-      fs.writeFileSync(image, Buffer.from(png[1], 'base64'));
       request.drawing = { image, viewport: body.drawing.viewport, rect: body.drawing.rect, elements: Array.isArray(body.drawing.elements) ? body.drawing.elements : [] };
     }
-    fs.writeFileSync(path.join(QUEUE, `${id}.json`), JSON.stringify(request, null, 2));
+    const ticket = JSON.stringify(request, null, 2);
+    if (ticket.length > TICKET_MAX) { res.writeHead(413).end('request too large'); return; }
+    if (png) fs.writeFileSync(image, Buffer.from(png[1], 'base64'));
+    fs.writeFileSync(path.join(QUEUE, `${id}.json`), ticket);
     res.writeHead(201, { 'Content-Type': 'application/json' }).end(JSON.stringify({ id }));
+    try { pruneQueue(); } catch {}
   } else if (route === '/undo') {
     // Undo: only the most recent request of the repo, already done, with files saved by snap.mjs
     const id = String(body.id || '');
@@ -264,7 +311,7 @@ async function handleApi(req, res, route) {
     if (!r.files.length) { res.writeHead(409).end('request has no saved files'); return; }
     let restored;
     try { restored = restoreSnapshot(QUEUE, r); } catch (e) { res.writeHead(500).end(`restore failed: ${e.message}`); return; }
-    const saved = JSON.parse(fs.readFileSync(path.join(QUEUE, `${id}.json`), 'utf8'));
+    const saved = readJsonFile(path.join(QUEUE, `${id}.json`));
     saved.status = 'undone';
     saved.undoneAt = new Date().toISOString();
     saved.restored = restored;
@@ -276,7 +323,7 @@ async function handleApi(req, res, route) {
     const answer = typeof body.answer === 'string' ? body.answer.trim() : '';
     if (!VALID_ID.test(id) || !answer) { res.writeHead(400).end(); return; }
     let r = null;
-    try { r = JSON.parse(fs.readFileSync(path.join(QUEUE, `${id}.json`), 'utf8')); } catch {}
+    try { r = readJsonFile(path.join(QUEUE, `${id}.json`)); } catch {}
     if (!r || r.status !== 'question') { res.writeHead(409).end('request has no open question'); return; }
     r.userAnswer = answer;
     r.status = 'answered';
@@ -334,14 +381,21 @@ function proxy(req, res) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.url.startsWith('/__le')) { handleApi(req, res, req.url.slice(5).split('?')[0]); return; }
+  // Only the loopback names: a foreign hostname that resolves to 127.0.0.1 (DNS rebinding) must not read the queue.
+  if (!LOCAL_HOSTS.has(String(req.headers.host).toLowerCase())) { res.writeHead(403).end(); return; }
+  if (req.url.startsWith('/__le')) {
+    handleApi(req, res, req.url.slice(5).split('?')[0]).catch((e) => {
+      if (!res.headersSent) res.writeHead(500).end(String(e?.message || e)); else res.end();
+    });
+    return;
+  }
   if (!target) { res.writeHead(302, { Location: '/__le/' }).end(); return; }
   proxy(req, res);
 });
 
 // WebSocket (dev server hot reload) passed through as a raw tunnel
 server.on('upgrade', (req, socket, head) => {
-  if (!target?.url) { socket.destroy(); return; }
+  if (!LOCAL_HOSTS.has(String(req.headers.host).toLowerCase()) || !target?.url) { socket.destroy(); return; }
   const t = new URL(target.url);
   const port = Number(t.port) || (t.protocol === 'https:' ? 443 : 80);
   const up = t.protocol === 'https:' ? tls.connect(port, t.hostname, { servername: t.hostname }) : net.connect(port, t.hostname);

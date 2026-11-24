@@ -5,11 +5,11 @@
 // as new (undo deletes it). Copies go in queue/snap/<id>/ (no loose .json in queue/).
 import fs from 'node:fs';
 import path from 'node:path';
-import { snapDir } from './lib.mjs';
+import { readJsonFile, snapDir } from './lib.mjs';
 
 const [request, ...files] = process.argv.slice(2);
 if (!request || !files.length) { console.error('usage: node snap.mjs <request.json> <file> [file...]'); process.exit(1); }
-const r = JSON.parse(fs.readFileSync(request, 'utf8'));
+const r = readJsonFile(request);
 const dir = snapDir(path.dirname(path.resolve(request)), r.id);
 fs.mkdirSync(dir, { recursive: true });
 const mf = path.join(dir, 'manifest.json');

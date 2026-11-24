@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readJsonFile } from './lib.mjs';
 
 const arg = (name, dflt) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : dflt; };
 const QUEUE = path.resolve(arg('--queue', path.join(path.dirname(fileURLToPath(import.meta.url)), 'queue')));
@@ -23,11 +24,11 @@ function events() {
   for (const f of files) {
     const full = path.join(QUEUE, f);
     let r;
-    try { r = JSON.parse(fs.readFileSync(full, 'utf8')); } catch { continue; } // still being written: next poll
+    try { r = readJsonFile(full); } catch { continue; } // still being written: next poll
     if (repo && r.repo && norm(r.repo) !== repo) continue;
     if (r.status === 'pending') out.push(`REQUEST ${full} :: ${r.replyTo ? `(reply to ${r.replyTo.id}) ` : ''}${one(r.comment).slice(0, 120)}`);
     else if (r.status === 'answered') out.push(`ANSWER ${full} :: ${one(r.userAnswer).slice(0, 120)}`);
-    else if (r.status === 'undone' && Date.now() - fs.statSync(full).mtimeMs < 30 * 60 * 1000) out.push(`UNDONE ${full} :: ${one((r.restored || []).join(', '))}`);
+    else if (r.status === 'undone' && Date.now() - (fs.statSync(full, { throwIfNoEntry: false })?.mtimeMs ?? 0) < 30 * 60 * 1000) out.push(`UNDONE ${full} :: ${one((r.restored || []).join(', '))}`);
   }
   return out;
 }
