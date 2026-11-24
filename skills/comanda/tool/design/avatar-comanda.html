@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Comanda — avatar (handoff)</title>
+<!--
+  DESIGN HANDOFF — Comanda
+  Paste or attach this file and ask: "redesign the avatar keeping the constraints in this comment".
+
+  What the product is: Comanda is an overlay injected into a site under development. You click an
+  element on the page, write the request, and an agent changes the code; hot reload shows the
+  result. Metaphor: ticket (the request) -> queue -> kitchen (the agent) -> dish (the change).
+
+  The avatar is the "chef" who serves: it lives in the panel, looks at what the user points at
+  and blinks. It must be recognizable at 26px (real size) and stay readable at 120px.
+
+  Constraints (not negotiable):
+  - Inline SVG, no image, no external font, no dependency.
+  - Runs inside a shadow root over someone else's site: no global resets.
+  - State: gaze follows the cursor (limit ~1.7 units in a 40 viewBox) and blinks every ~6s.
+  - prefers-reduced-motion: no blink and no tracking.
+  - Colors must work on #111 (panel background).
+
+  Where it appears: top bar of the requests panel, left of the drag handle.
+-->
+<style>
+  :root {
+    --panel: #111;
+    --field: #1a1a1a;
+    --border: #333;
+    --divider: #3a3a3a;
+    --text: #eee;
+    --secondary: #8a8a8a;
+    --guide: #f24e7b;
+    --edit: #a855f7;
+    --hover: #f59e0b;
+    --cream: #f1ebdc;
+    --cream-light: #f7f4ec;
+    --ink: #141414;
+  }
+  body { margin: 0; padding: 32px; background: #0b0b0b; color: var(--text); font: 13px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
+  p { color: var(--secondary); margin: 0 0 20px; }
+  .row { display: flex; align-items: center; gap: 28px; margin-bottom: 24px; }
+  .label { color: var(--secondary); font-size: 11px; margin-top: 6px; text-align: center; }
+  .box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .bar { display: flex; align-items: center; gap: 8px; color: var(--secondary); }
+  .bar .grip { cursor: row-resize; padding: 0 4px; }
+  .bar .sp { flex: 1 }
+  .bar .btn { width: 30px; height: 28px; border: 1px solid #444; border-radius: 6px; background: #1f1f1f; display: grid; place-items: center; color: #fff; }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .swatch { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--secondary); }
+  .swatch i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  svg { display: block; overflow: visible; }
+  .hat { fill: var(--cream-light); stroke: #12100e; stroke-width: 1; }
+  .head { fill: var(--cream); stroke: #12100e; stroke-width: 1; }
+  .eye { fill: var(--ink); }
+  .blink { transform-box: fill-box; transform-origin: center; animation: blink 6s ease-in-out infinite; }
+  @keyframes blink { 0%, 95% { transform: scaleY(1); } 97% { transform: scaleY(.08); } 100% { transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .blink { animation: none } }
+</style>
+</head>
+<body>
+  <h1>Comanda — chef avatar</h1>
+  <p>The same SVG in three sizes. The 26px one is the real one; the others exist to judge the drawing.</p>
+
+  <div class="row">
+    <div>
+      <svg class="av" viewBox="0 0 40 40" width="26" height="26" aria-hidden="true">
+        <circle class="hat" cx="13.6" cy="10.6" r="5.4"/><circle class="hat" cx="20" cy="8.2" r="5.9"/><circle class="hat" cx="26.4" cy="10.6" r="5.4"/>
+        <rect class="hat" x="11.4" y="11.6" width="17.2" height="4.6" rx="2.3"/>
+        <rect class="head" x="9.4" y="15.2" width="21.2" height="20.4" rx="8"/>
+        <g class="look"><g class="blink"><rect class="eye" x="14.5" y="22.2" width="3.7" height="7.2" rx="1.85"/><rect class="eye" x="21.8" y="22.2" width="3.7" height="7.2" rx="1.85"/></g></g>
+      </svg>
+      <div class="label">26px (real use)</div>
+    </div>
+    <div>
+      <svg class="av" viewBox="0 0 40 40" width="64" height="64" aria-hidden="true">
+        <circle class="hat" cx="13.6" cy="10.6" r="5.4"/><circle class="hat" cx="20" cy="8.2" r="5.9"/><circle class="hat" cx="26.4" cy="10.6" r="5.4"/>
+        <rect class="hat" x="11.4" y="11.6" width="17.2" height="4.6" rx="2.3"/>
+        <rect class="head" x="9.4" y="15.2" width="21.2" height="20.4" rx="8"/>
+        <g class="look"><g class="blink"><rect class="eye" x="14.5" y="22.2" width="3.7" height="7.2" rx="1.85"/><rect class="eye" x="21.8" y="22.2" width="3.7" height="7.2" rx="1.85"/></g></g>
+      </svg>
+      <div class="label">64px</div>
+    </div>
+    <div>
+      <svg class="av" viewBox="0 0 40 40" width="120" height="120" aria-hidden="true">
+        <circle class="hat" cx="13.6" cy="10.6" r="5.4"/><circle class="hat" cx="20" cy="8.2" r="5.9"/><circle class="hat" cx="26.4" cy="10.6" r="5.4"/>
+        <rect class="hat" x="11.4" y="11.6" width="17.2" height="4.6" rx="2.3"/>
+        <rect class="head" x="9.4" y="15.2" width="21.2" height="20.4" rx="8"/>
+        <g class="look"><g class="blink"><rect class="eye" x="14.5" y="22.2" width="3.7" height="7.2" rx="1.85"/><rect class="eye" x="21.8" y="22.2" width="3.7" height="7.2" rx="1.85"/></g></g>
+      </svg>
+      <div class="label">120px</div>
+    </div>
+  </div>
+
+  <div class="box" style="max-width:420px">
+    <div class="bar">
+      <svg class="av" viewBox="0 0 40 40" width="26" height="26" aria-hidden="true">
+        <circle class="hat" cx="13.6" cy="10.6" r="5.4"/><circle class="hat" cx="20" cy="8.2" r="5.9"/><circle class="hat" cx="26.4" cy="10.6" r="5.4"/>
+        <rect class="hat" x="11.4" y="11.6" width="17.2" height="4.6" rx="2.3"/>
+        <rect class="head" x="9.4" y="15.2" width="21.2" height="20.4" rx="8"/>
+        <g class="look"><g class="blink"><rect class="eye" x="14.5" y="22.2" width="3.7" height="7.2" rx="1.85"/><rect class="eye" x="21.8" y="22.2" width="3.7" height="7.2" rx="1.85"/></g></g>
+      </svg>
+      <span class="grip">::</span>
+      <span class="btn">&#8599;</span><span class="btn">&#9633;</span><span class="btn">&#9998;</span>
+      <span class="sp"></span>
+      <span style="color:#16934a">&#9679;</span>
+    </div>
+    <p style="margin:10px 0 0">1 item(s) selected clear</p>
+    <div style="border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--secondary);margin-top:8px">What should change? @ cites an item or area</div>
+  </div>
+  <div class="label" style="text-align:left;margin-top:8px">In context: the top bar of the requests panel</div>
+
+  <p style="margin-top:28px">Panel palette (the avatar must live with this):</p>
+  <div class="swatches">
+    <span class="swatch"><i style="background:#111"></i>#111 panel</span>
+    <span class="swatch"><i style="background:#1a1a1a"></i>#1a1a1a field</span>
+    <span class="swatch"><i style="background:#333"></i>#333 border</span>
+    <span class="swatch"><i style="background:#f24e7b"></i>#f24e7b guide</span>
+    <span class="swatch"><i style="background:#a855f7"></i>#a855f7 edit</span>
+    <span class="swatch"><i style="background:#f59e0b"></i>#f59e0b hover</span>
+    <span class="swatch"><i style="background:#f1ebdc"></i>#f1ebdc cream</span>
+  </div>
+
+<script>
+  // same behavior as the overlay: eyes follow the cursor, limited to 1.7 units in the 40 viewBox
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    addEventListener('pointermove', (e) => {
+      for (const av of document.querySelectorAll('svg.av')) {
+        const eyes = av.querySelector('.look');
+        const r = av.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        const d = Math.hypot(dx, dy) || 1;
+        const k = Math.min(1.7, (d / 60) * 1.7);
+        eyes.setAttribute('transform', `translate(${((dx / d) * k).toFixed(2)} ${((dy / d) * k).toFixed(2)})`);
+      }
+    });
+  }
+</script>
+</body>
+</html>

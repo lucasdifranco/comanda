@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="Comanda: select an element on the dev site, the ticket goes to the queue, the agent edits the code">
+  <rect width="1200" height="420" fill="#0b0b0b"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
+
+    <!-- panel: your page -->
+    <rect x="40" y="60" width="330" height="300" rx="14" fill="#111" stroke="#262626"/>
+    <text x="62" y="92" fill="#6b7280">your dev site</text>
+    <rect x="62" y="108" width="286" height="28" rx="6" fill="#171717" stroke="#222"/>
+    <rect x="62" y="150" width="130" height="88" rx="8" fill="#171717" stroke="#222"/>
+    <rect x="204" y="150" width="144" height="88" rx="8" fill="#1b1a16" stroke="#f29a3a" stroke-width="2"/>
+    <rect x="216" y="166" width="56" height="7" rx="3.5" fill="#3f3f46"/>
+    <rect x="216" y="181" width="96" height="7" rx="3.5" fill="#3f3f46"/>
+    <rect x="216" y="206" width="52" height="18" rx="9" fill="#f29a3a" opacity=".85"/>
+    <text x="120" y="288" fill="#f29a3a" font-size="12">&#64;1</text>
+    <rect x="62" y="310" width="286" height="32" rx="8" fill="#171717" stroke="#222"/>
+    <text x="74" y="331" fill="#9ca3af" font-size="12">make it taller&#8230;</text>
+
+    <!-- arrow: ticket -->
+    <path d="M382 210 H472" stroke="#3f3f46" stroke-width="2" stroke-dasharray="5 5"/>
+    <path d="M466 204 L474 210 L466 216" fill="none" stroke="#3f3f46" stroke-width="2"/>
+    <rect x="392" y="150" width="72" height="34" rx="6" fill="#1b1a16" stroke="#f29a3a"/>
+    <text x="402" y="172" fill="#f29a3a" font-size="12">#0041</text>
+    <text x="386" y="268" fill="#6b7280" font-size="11">the ticket</text>
+
+    <!-- panel: queue + agent -->
+    <rect x="486" y="60" width="300" height="300" rx="14" fill="#111" stroke="#262626"/>
+    <text x="508" y="92" fill="#6b7280">queue / agent</text>
+    <rect x="508" y="108" width="256" height="40" rx="6" fill="#171717" stroke="#222"/>
+    <text x="520" y="126" fill="#9ca3af" font-size="11">#0041 queued</text>
+    <rect x="520" y="132" width="150" height="7" rx="3.5" fill="#3f3f46"/>
+    <rect x="508" y="160" width="256" height="40" rx="6" fill="#1b1a16" stroke="#f29a3a"/>
+    <text x="520" y="178" fill="#f29a3a" font-size="11">&#9670; cooking</text>
+    <rect x="520" y="184" width="112" height="7" rx="3.5" fill="#7a5a2a"/>
+    <rect x="508" y="256" width="256" height="40" rx="6" fill="#141a12" stroke="#3a5c2a"/>
+    <text x="520" y="274" fill="#9ccf6a" font-size="11">DONE</text>
+    <text x="520" y="288" fill="#6b7280" font-size="10">Card.tsx: height 240px</text>
+    <text x="508" y="332" fill="#6b7280" font-size="11">status + one-line reply</text>
+
+    <!-- arrow: code -->
+    <path d="M792 210 H882" stroke="#3f3f46" stroke-width="2" stroke-dasharray="5 5"/>
+    <path d="M876 204 L884 210 L876 216" fill="none" stroke="#3f3f46" stroke-width="2"/>
+
+    <!-- panel: your repo -->
+    <rect x="896" y="60" width="264" height="300" rx="14" fill="#111" stroke="#262626"/>
+    <text x="918" y="92" fill="#6b7280">your repo</text>
+    <text x="918" y="122" fill="#52525b" font-size="12">/* Card.tsx */</text>
+    <text x="918" y="144" fill="#6b7280" font-size="12">.card {</text>
+    <text x="918" y="164" fill="#9ca3af" font-size="12">  padding: 16px;</text>
+    <rect x="910" y="174" width="200" height="16" rx="3" fill="#141a12"/>
+    <text x="918" y="186" fill="#9ccf6a" font-size="12">  height: 240px;</text>
+    <text x="918" y="206" fill="#9ca3af" font-size="12">  border-radius: 8px;</text>
+    <text x="918" y="226" fill="#6b7280" font-size="12">}</text>
+    <text x="918" y="272" fill="#3f3f46" font-size="11">your hot reload repaints</text>
+    <text x="918" y="292" fill="#3f3f46" font-size="11">the page by itself</text>
+
+    <!-- footer -->
+    <text x="40" y="392" fill="#52525b" font-size="12">npx skills add lucasdifranco/comanda</text>
+    <text x="1160" y="392" fill="#3f3f46" font-size="12" text-anchor="end">local only &#183; no dependencies &#183; nothing installed in your site</text>
+  </g>
+</svg>

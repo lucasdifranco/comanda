@@ -1,0 +1,6 @@
+interface:
+  display_name: "Comanda"
+  short_description: "Ask for the change on screen; the agent edits the code live."
+  default_prompt: "Run Comanda for the dev site of this repository."
+policy:
+  allow_implicit_invocation: false
