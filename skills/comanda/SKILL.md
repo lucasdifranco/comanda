@@ -2,7 +2,7 @@
 name: comanda
 description: Comanda opens the dev site of the current repository in the browser with an Edit overlay, keeps serving the requests the user makes on screen (select items, mark an area, draw, type the change), and edits the code of the repository live. Use when the user runs /comanda, or asks to point at the page and change it by clicking instead of describing it. Requires Node 18+ and a dev server already running.
 license: MIT
-compatibility: Node.js 18+. Requires a running dev server of the target repository. Local only: listens on 127.0.0.1.
+compatibility: Node.js 18+. Requires a running dev server of the target repository. Local only, listens on 127.0.0.1.
 disable-model-invocation: true
 ---
 
