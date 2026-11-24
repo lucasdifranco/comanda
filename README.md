@@ -23,20 +23,9 @@ Then, from your repository, with the dev server running:
 /comanda:comanda  # the plugin — Claude Code namespaces plugin commands under the plugin name
 ```
 
-▶ **[43-second demo (mp4)](assets/comanda-demo.mp4)** — open the panel, select the headline, type the request, watch it land in the code; then **Edit**: move the button, change its radius, send the changes.
-
 ## On the page
 
-<table>
-<tr>
-<td width="50%"><img src="assets/mark-area.png" alt="Mark area: a box drawn over the headline block"><br><br><b>Mark area</b> — drag a box; every item under it goes with the request.</td>
-<td width="50%"><img src="assets/draw.png" alt="Draw: a red circle around the button"><br><br><b>Draw</b> — circle it in red, like on paper, and the items under the strokes come along.</td>
-</tr>
-<tr>
-<td><img src="assets/inspector.png" alt="Edit: the inspector open on the button, with position, layout, typography and the CSS"><br><br><b>Edit</b> — drag the item, change a value; the inspector shows the CSS that will be sent.</td>
-<td><img src="assets/done.png" alt="A finished ticket: DONE stamp, the reply on the stub, the headline now in two lines"><br><br><b>Done</b> — the ticket gets a <code>DONE</code> stamp and the agent's one-line reply on the stub.</td>
-</tr>
-</table>
+![Comanda in use: open the panel, select the headline, type the request, watch it land in the code; then drag the button in the inspector, change its radius, send the changes, and the ticket turns to DONE](assets/comanda-demo.gif)
 
 - **Nothing installed in your site.** Comanda is a local proxy; the overlay is injected into the HTML in flight.
 - **No dependencies.** Node 18+ and a browser.
@@ -126,7 +115,7 @@ The skill is portable on purpose: the queue protocol is plain files, and the one
 
 **Is my code sent anywhere?** No. The proxy is local; the browser, the queue and the agent are all on the same machine.
 
-**Is there a demo?** The [43-second mp4](assets/comanda-demo.mp4) above: one request from select to `DONE`, then the inspector moving an item.
+**Is there a demo?** The animation above, or the [43-second mp4](assets/comanda-demo.mp4): one request from select to `DONE`, then the inspector moving an item.
 
 **Something else?** Open an issue.
 
