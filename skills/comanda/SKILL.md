@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 # /comanda — take the order on screen, serve the code
 
+Comanda opens the dev site of the current repository with an edit overlay: the user selects an element, marks an area, draws on the page or changes a value in the inspector, and this skill edits the code. Their own hot reload repaints the result. The rest of this file is the procedure. Requires Node 18+ and a dev server already running.
+
 Vocabulary: **ticket** (the request) · **queue** the order queue · **kitchen** whoever cooks it (you) · **menu** the property inspector.
 
 Argument received: `$ARGUMENTS`

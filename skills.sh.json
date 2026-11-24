@@ -1,0 +1,12 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
+    {
+      "title": "Browser edit overlay",
+      "description": "Point at your dev site: select an element, mark an area, draw on it or change a value in the inspector, and the coding agent edits the code of the repository.",
+      "skills": [
+        "comanda"
+      ]
+    }
+  ]
+}
