@@ -50,6 +50,14 @@ Loop while the user is working:
 node TOOL/wait.mjs --repo <REPO> --timeout 90
 ```
 
+Run it in the background with a long timeout instead of a foreground 90 s round: a foreground round that ends leaves a window where a request arrives with nobody reading it, and the panel shows it parked in the queue. Start one as soon as the site is open, and start a new one right after serving each event:
+
+```
+node TOOL/wait.mjs --repo <REPO> --timeout 43200   (background, no timeout)
+```
+
+The watcher is a child of the agent's shell, so it dies when that session ends. Never assume the previous one is still alive: check the process (`Get-Process node` on Windows, `ps` elsewhere) and start a new one when it is gone, or a request sent meanwhile stays in the queue with nobody to serve it.
+
 It prints one line per event and exits: `REQUEST <json> :: <comment>`, `ANSWER <json> :: <answer>`, `UNDONE <json> :: <files>`, or `WAITING` (nothing yet — run it again). `UNDONE` repeats for 30 minutes; if you already handled that one, ignore it.
 
 Tell the user in one line: the site is open at http://127.0.0.1:7780/ — use the pencil, select or mark, then Send.
